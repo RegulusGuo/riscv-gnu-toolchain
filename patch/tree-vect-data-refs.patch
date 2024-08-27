@@ -1,0 +1,54 @@
+diff --git a/gcc/tree-vect-data-refs.cc b/gcc/tree-vect-data-refs.cc
+index c531079d3bb..03955fec67b 100644
+--- a/gcc/tree-vect-data-refs.cc
++++ b/gcc/tree-vect-data-refs.cc
+@@ -1462,7 +1462,9 @@ vect_compute_data_ref_alignment (vec_info *vinfo, dr_vec_info *dr_info,
+       return;
+     }
+ 
+-  SET_DR_MISALIGNMENT (dr_info, const_misalignment);
++//   SET_DR_MISALIGNMENT (dr_info, const_misalignment);
++  if (!const_misalignment)
++    SET_DR_MISALIGNMENT (dr_info, DR_MISALIGNMENT_UNKNOWN);
+ 
+   if (dump_enabled_p ())
+     dump_printf_loc (MSG_MISSED_OPTIMIZATION, vect_location,
+@@ -2674,7 +2676,7 @@ vect_enhance_data_refs_alignment (loop_vec_info loop_vinfo)
+ 	  /* The inside-loop cost will be accounted for in vectorizable_load
+ 	     and vectorizable_store correctly with adjusted alignments.
+ 	     Drop the body_cst_vec on the floor here.  */
+-	  return opt_result::success ();
++	  // return opt_result::success ();
+         }
+     }
+ 
+@@ -2721,6 +2723,8 @@ vect_enhance_data_refs_alignment (loop_vec_info loop_vinfo)
+ 	  enum dr_alignment_support supportable_dr_alignment
+ 	    = vect_supportable_dr_alignment (loop_vinfo, dr_info, vectype,
+ 					     misalignment);
++     
++        supportable_dr_alignment = dr_unaligned_unsupported;
+ 	  if (supportable_dr_alignment == dr_unaligned_unsupported)
+             {
+ 	      if (misalignment != DR_MISALIGNMENT_UNKNOWN
+@@ -2735,12 +2739,14 @@ vect_enhance_data_refs_alignment (loop_vec_info loop_vinfo)
+ 		 with variable VF, since there's no guarantee that the
+ 		 VF is a power of two.  We could relax this if we added
+ 		 a way of enforcing a power-of-two size.  */
+-	      unsigned HOST_WIDE_INT size;
+-	      if (!GET_MODE_SIZE (TYPE_MODE (vectype)).is_constant (&size))
+-		{
+-		  do_versioning = false;
+-		  break;
+-		}
++	      unsigned HOST_WIDE_INT size, size_const;
++	  //     if (!GET_MODE_SIZE (TYPE_MODE (vectype)).is_constant (&size))
++		// {
++		//   do_versioning = false;
++		//   break;
++		// }
++
++        size = GET_MODE_SIZE (TYPE_MODE (vectype)).is_constant (&size_const) ? size_const : 4;
+ 
+ 	      /* Forcing alignment in the first iteration is no good if
+ 		 we don't keep it across iterations.  For now, just disable
